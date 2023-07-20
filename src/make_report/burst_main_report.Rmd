@@ -1,0 +1,1057 @@
+---
+title: "BURST Statistical Mock-up Report"
+author: "Inge Christoffer Olsen, PhD"
+date: '`r format(Sys.time(), "%d %B, %Y")` '
+output:
+  word_document:
+    reference_docx: report_template.docx
+    toc: yes
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+    df_print: paged
+params:
+  viedoc_export: _20230704_090943
+  bibliography: data/misc/grateful-refs.bib
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+library(tidyverse)
+library(wesanderson)
+library(rlang)
+library(glue)
+library(knitr)
+library(labelled)
+library(rtables)
+library(ggplot2)
+library(lme4)
+library(marginaleffects)
+library(flextable)
+
+```
+
+```{r load-datasets, include = FALSE}
+
+raw <- read_rds("data/raw/raw.rds")
+adsl <- read_rds("data/ad/adsl.rds")
+adsl_all <- read_rds("data/ad/adsl_all.rds")
+addm <- read_rds("data/ad/addm.rds")
+adprom <- read_rds("data/ad/adprom.rds")
+source("src/external/functions.R", local = knitr::knit_global())
+export_date = substr(params$viedoc_export,2,9) %>% lubridate::as_datetime()
+
+pr_text = "While the results are based on real data, the treatment allocation has been drawn randomly for this report. Thus, this is a mock-up report intended to show how the final report will look like, without showing the actual results of the trial and the treatment differences."
+
+#pr_text = "The results in this report is according to the true random allocation. "
+
+```
+# Introduction
+This is the report for the first interim analysis of the BURST trial. The data are based on an export from the Viedoc electronic data capture at `r export_date` system time stamped "`r params$viedoc_export`". 
+
+`r pr_text` 
+
+There were `r n_distinct(adsl)` included patients of which `r n_distinct(adsl %>% filter(fas))` are included in the full analysis set. 
+
+# Demographics
+
+```{r f_dm}
+s_summary <- function(x, .N_col) {
+  if (is.numeric(x)) {
+    in_rows(
+      "n" = rcell(sum(!is.na(x)), format = "xx"),
+      "Mean (sd)" = rcell(c(mean(x, na.rm = TRUE), sd(x, na.rm = TRUE)), format = "xx.xx (xx.xx)"),
+      "IQR" = rcell(IQR(x, na.rm = TRUE), format = "xx.xx"),
+      "min - max" = rcell(range(x, na.rm = TRUE), format = "xx.xx - xx.xx")
+    )
+  } else if (is.factor(x)) {
+   in_rows(.list = lapply(as.list(table(x)), function(xi) rcell(xi * c(1, 1/.N_col), format = "xx (xx.xx%)")))
+  } else {
+    in_rows(.list = as.list(table(factor(x))))
+  }
+}
+
+
+dmvars <- names(addm %>% select(-subjectid, -fas))
+dmlabs <- var_label(addm %>% select(-subjectid, -fas), unlist = TRUE)
+
+```
+
+## All randomised
+
+```{r dm_tbl_all}
+dmlyt <- basic_table(show_colcounts = TRUE, title = "Demographics and baseline characteristics", subtitles = "All randomised") %>%
+  analyze(dmvars , afun = s_summary, var_labels = dmlabs)
+
+dm_tbl_all <- build_table(dmlyt, addm) %>%
+  tt_to_flextable() %>%
+  autofit()
+dm_tbl_all
+
+```
+
+## Excluded from FAS
+
+```{r dm_tbl_ex}
+dmlyt <- basic_table(show_colcounts = TRUE, title = "Demographics and baseline characteristics", subtitles = "Excluded from Full Analysis Set") %>%
+  analyze(dmvars , afun = s_summary, var_labels = dmlabs)
+
+dm_tbl_all <- build_table(dmlyt, addm %>% filter(!fas)) %>%
+  tt_to_flextable() %>%
+  autofit()
+dm_tbl_all
+
+```
+## Full analysis set
+
+```{r dm_tbl_fas}
+
+dmlyt <- basic_table(show_colcounts = TRUE, title = "Demographics and baseline characteristics", subtitles = "Full analysis set") %>%
+  analyze(dmvars , afun = s_summary, var_labels = dmlabs)
+
+dm_tbl <- build_table(dmlyt, addm %>% filter(fas)) %>% 
+  tt_to_flextable() %>% 
+  autofit()
+dm_tbl
+
+```
+
+
+
+# Dosage
+
+Information on dosage:
+```{r}
+
+f_antbl2_period(adprom, "trtdose")
+
+```
+
+# Analysis
+
+
+## Primary outcome: Usual pain intensity in lower extremity (NRS) 
+### Plot
+```{r, fig.fullwidth = TRUE, fig.width = 10, fig.height = 7}
+f_anplot1(adprom, "painleg3")
+
+```
+
+### Descriptive table
+
+```{r }
+
+f_antbl_period(adprom, "painleg3")
+
+```
+
+### Hypothesis test
+
+```{r}
+
+res <- f_antbl_overall(adprom, "painleg3")
+res$tbl
+
+```
+Values are Burst stimulation - Sham.
+
+
+P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits = 2, eps = 0.001)`.
+
+
+
+### Treatment effect estimates
+
+QQ-plot
+```{r}
+res <- f_mixed(adprom, "painleg3")
+qqnorm(residuals(res$fit))
+ 
+```
+
+
+By subject
+```{r}
+res$by_subj %>% 
+  knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+ 
+```
+
+Overall
+```{r}
+res$overall %>% 
+  knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+```
+
+
+## Secondary outcome: Highest pain intensity in lower extremity (NRS) 
+### Plot
+```{r, fig.fullwidth = TRUE, fig.width = 10, fig.height = 7}
+f_anplot1(adprom, "painleg1")
+
+```
+
+### Descriptive table
+
+```{r}
+
+f_antbl_period(adprom, "painleg1")
+
+```
+
+### Hypothesis test
+
+```{r}
+
+res <- f_antbl_overall(adprom, "painleg1")
+res$tbl
+
+```
+Values are Burst stimulation - Sham.
+
+
+P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits = 2, eps = 0.001)`.
+
+
+
+### Treatment effect estimates
+
+QQ-plot
+```{r}
+res <- f_mixed(adprom, "painleg1")
+qqnorm(residuals(res$fit))
+ 
+```
+
+By subject
+```{r}
+
+res$by_subj %>% 
+  knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+ 
+```
+
+Overall
+```{r}
+res$overall %>% 
+  knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+```
+
+
+
+## Secondary outcome: Lowest pain intensity in lower extremity (NRS) 
+### Plot
+```{r, fig.fullwidth = TRUE, fig.width = 10, fig.height = 7}
+f_anplot1(adprom, "painleg2")
+
+```
+
+### Descriptive table
+
+```{r }
+
+f_antbl_period(adprom, "painleg2")
+
+```
+
+### Hypothesis test
+
+```{r}
+
+res <- f_antbl_overall(adprom, "painleg2")
+res$tbl
+
+```
+Values are Burst stimulation - Sham.
+
+
+P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits = 2, eps = 0.001)`.
+
+
+
+### Treatment effect estimates
+
+QQ-plot
+```{r}
+res <- f_mixed(adprom, "painleg2")
+qqnorm(residuals(res$fit))
+ 
+```
+
+
+By subject
+```{r}
+
+res$by_subj %>% 
+  knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+ 
+```
+
+Overall
+```{r}
+res$overall %>% 
+  knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+```
+
+
+
+
+## Secondary outcome: Current pain intensity in lower extremity (NRS) 
+### Plot
+```{r, fig.fullwidth = TRUE, fig.width = 10, fig.height = 7}
+f_anplot1(adprom, "painleg4")
+
+```
+
+### Descriptive table
+
+```{r }
+
+f_antbl_period(adprom, "painleg4")
+
+```
+
+### Hypothesis test
+
+```{r}
+
+res <- f_antbl_overall(adprom, "painleg4")
+res$tbl
+
+```
+Values are Burst stimulation - Sham.
+
+
+P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits = 2, eps = 0.001)`.
+
+
+
+### Treatment effect estimates
+
+QQ-plot
+```{r}
+res <- f_mixed(adprom, "painleg4")
+qqnorm(residuals(res$fit))
+ 
+```
+
+By subject
+```{r}
+
+res$by_subj %>% 
+  knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+ 
+```
+
+Overall
+```{r}
+res$overall %>% 
+  knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+```
+
+
+
+
+## Secondary outcome: Usual pain intensity in the back (NRS) 
+### Plot
+```{r, fig.fullwidth = TRUE, fig.width = 10, fig.height = 7, warning = FALSE}
+f_anplot1(adprom, "painback")
+
+```
+
+### Descriptive table
+
+```{r, warning = FALSE}
+
+f_antbl_period(adprom, "painback")
+
+```
+
+### Hypothesis test
+
+```{r}
+
+res <- f_antbl_overall(adprom, "painback")
+res$tbl
+
+```
+Values are Burst stimulation - Sham.
+
+
+P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits = 2, eps = 0.001)`.
+
+
+
+### Treatment effect estimates
+
+QQ-plot
+```{r}
+res <- f_mixed(adprom, "painback")
+qqnorm(residuals(res$fit))
+ 
+```
+
+By subject
+```{r}
+
+res$by_subj %>% 
+  knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+ 
+```
+
+Overall
+```{r}
+res$overall %>% 
+  knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+```
+
+
+
+
+## Secondary outcome: Pain unpleasantness (NRS) 
+### Plot
+```{r, fig.fullwidth = TRUE, fig.width = 10, fig.height = 7, warning = FALSE}
+f_anplot1(adprom, "painunpl")
+
+```
+
+### Descriptive table
+
+```{r }
+
+f_antbl_period(adprom, "painunpl")
+
+```
+
+### Hypothesis test
+
+```{r}
+
+res <- f_antbl_overall(adprom, "painunpl")
+res$tbl
+
+```
+Values are Burst stimulation - Sham.
+
+
+P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits = 2, eps = 0.001)`.
+
+
+
+### Treatment effect estimates
+
+QQ-plot
+```{r}
+res <- f_mixed(adprom, "painunpl")
+qqnorm(residuals(res$fit))
+ 
+```
+
+
+By subject
+```{r}
+
+res$by_subj %>% 
+  knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+ 
+```
+
+Overall
+```{r}
+res$overall %>% 
+  knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+```
+
+
+
+
+## Secondary outcome: Ability to do first activity (NRS) 
+### Plot
+```{r, fig.fullwidth = TRUE, fig.width = 10, fig.height = 7, warning=FALSE}
+f_anplot1(adprom, "psfs1")
+
+```
+
+### Descriptive table
+
+```{r }
+
+f_antbl_period(adprom, "psfs1")
+
+```
+
+### Hypothesis test
+
+```{r}
+
+res <- f_antbl_overall(adprom, "psfs1")
+res$tbl
+
+```
+Values are Burst stimulation - Sham.
+
+
+P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits = 2, eps = 0.001)`.
+
+
+
+### Treatment effect estimates
+
+QQ-plot
+```{r}
+res <- f_mixed(adprom, "psfs1")
+qqnorm(residuals(res$fit))
+ 
+```
+
+
+By subject
+```{r}
+
+res$by_subj %>% 
+  knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+ 
+```
+
+Overall
+```{r}
+res$overall %>% 
+  knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+```
+
+
+
+
+
+
+## Secondary outcome: Ability to do second activity (NRS) 
+### Plot
+```{r, fig.fullwidth = TRUE, fig.width = 10, fig.height = 7, warning = FALSE}
+f_anplot1(adprom, "psfs2")
+
+```
+
+### Descriptive table
+
+```{r }
+
+f_antbl_period(adprom, "psfs2")
+
+```
+
+### Hypothesis test
+
+```{r}
+
+res <- f_antbl_overall(adprom, "psfs2")
+res$tbl
+
+```
+Values are Burst stimulation - Sham.
+
+
+P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits = 2, eps = 0.001)`.
+
+
+
+### Treatment effect estimates
+
+QQ-plot
+```{r}
+res <- f_mixed(adprom, "psfs2")
+qqnorm(residuals(res$fit))
+ 
+```
+
+By subject
+```{r}
+res$by_subj %>% 
+  knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+ 
+```
+
+Overall
+```{r}
+res$overall %>% 
+  knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+```
+
+
+
+## Secondary outcome: Ability to do third activity (NRS) 
+### Plot
+```{r, fig.fullwidth = TRUE, fig.width = 10, fig.height = 7, warning=FALSE}
+f_anplot1(adprom, "psfs3")
+
+```
+
+### Descriptive table
+
+```{r }
+
+f_antbl_period(adprom, "psfs3")
+
+```
+
+### Hypothesis test
+
+```{r}
+
+res <- f_antbl_overall(adprom, "psfs3")
+res$tbl
+
+```
+Values are Burst stimulation - Sham.
+
+
+P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits = 2, eps = 0.001)`.
+
+
+
+### Treatment effect estimates
+
+QQ-plot
+```{r}
+res <- f_mixed(adprom, "psfs3")
+qqnorm(residuals(res$fit))
+ 
+```
+
+By subject
+```{r}
+
+res$by_subj %>% 
+  knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+ 
+```
+
+Overall
+```{r}
+res$overall %>% 
+  knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+```
+
+
+
+## Secondary endpoint: Insomnia Severity Index questionnaire total score
+### Plot
+```{r, fig.fullwidth = TRUE, fig.width = 10, fig.height = 7, warning = FALSE}
+f_anplot1(adprom, "isi_score")
+
+```
+### Descriptive table
+
+```{r }
+
+f_antbl2_period(adprom, "isi_score")
+
+```
+
+### Hypothesis test
+
+```{r}
+
+res <- f_antbl_overall(adprom, "isi_score")
+
+res$tbl
+
+```
+
+Values are Burst stimulation - Sham.
+
+
+P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits = 2, eps = 0.001)`.
+
+### Treatment effect estimates
+
+QQ-plot
+```{r}
+res <- f_mixed2(adprom, "isi_score")
+qqnorm(residuals(res$fit))
+ 
+```
+
+By subject
+```{r}
+
+res$by_subj %>% 
+  knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+ 
+```
+
+Overall
+```{r}
+res$overall %>% 
+  knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+```
+
+
+
+
+
+## Secondary endpoint: EQ-5D-5L Utility Index 
+### Plot
+```{r, fig.fullwidth = TRUE, fig.width = 10, fig.height = 7, warning = FALSE}
+f_anplot1(adprom, "eq5dui")
+
+```
+### Descriptive table
+
+```{r }
+
+f_antbl2_period(adprom, "eq5dui")
+
+```
+
+### Hypothesis test
+
+```{r}
+
+res <- f_antbl_overall(adprom, "eq5dui")
+
+res$tbl
+
+```
+
+Values are Burst stimulation - Sham.
+
+
+P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits = 2, eps = 0.001)`.
+
+### Treatment effect estimates
+
+QQ-plot
+```{r}
+res <- f_mixed(adprom, "eq5dui")
+qqnorm(residuals(res$fit))
+ 
+```
+
+By subject
+```{r}
+
+res$by_subj %>% 
+  knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+ 
+```
+
+Overall
+```{r}
+res$overall %>% 
+  knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+```
+
+
+
+
+## Secondary endpoint: EQ-5D-5L self-rated health (VAS)
+### Plot
+```{r, fig.fullwidth = TRUE, fig.width = 10, fig.height = 7, warning = FALSE}
+f_anplot1(adprom, "eq5dvas")
+
+```
+### Descriptive table
+
+```{r }
+
+f_antbl2_period(adprom, "eq5dvas")
+
+```
+
+### Hypothesis test
+
+```{r}
+
+res <- f_antbl_overall(adprom, "eq5dvas")
+
+res$tbl
+
+```
+
+Values are Burst stimulation - Sham.
+
+
+P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits = 2, eps = 0.001)`.
+
+### Treatment effect estimates
+
+QQ-plot
+```{r}
+res <- f_mixed(adprom, "eq5dvas")
+qqnorm(residuals(res$fit))
+ 
+```
+
+By subject
+```{r}
+
+res$by_subj %>% 
+  knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+ 
+```
+
+Overall
+```{r}
+res$overall %>% 
+  knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+```
+
+
+## Secondary endpoint: Patient Global Impression of Change
+
+### Descriptive table
+
+```{r }
+prevtrt <- adprom %>% 
+  select(subjectid, rantrt, period) %>% 
+  unique()
+
+prevtrt <- prevtrt %>% 
+  group_by(subjectid) %>% 
+  mutate(prevtrt = lag(rantrt)) %>% 
+  select(-rantrt)
+
+db_change <- adprom %>% 
+  left_join(prevtrt, by = c("subjectid", "period")) %>% 
+  select(subjectid, rantrt, prevtrt, period, pgic, pgiccd) %>% 
+  filter(rantrt != "Baseline" & !is.na(pgic)) %>% 
+  mutate(transition = paste0(prevtrt, " - ", rantrt)) %>% 
+  mutate(transition = factor(transition))
+
+lyt <- basic_table(subtitles =c("Full analysis set", "Patient Global Impression of Change")) %>% 
+  split_cols_by("transition") %>% 
+  analyze("pgic", afun = s_summary)
+
+  tbl_change <- build_table(lyt, db_change) %>% 
+    tt_to_flextable() %>% 
+    autofit()
+  
+  tbl_change
+
+```
+
+### Hypothesis test and treatment effect estimates
+
+```{r, warning = FALSE, include = FALSE}
+
+analyse_change <- db_change %>% 
+  filter(transition == "Burst stimulation - Sham" | transition == "Sham - Burst stimulation") %>% 
+  mutate(transition = factor(transition))
+
+
+fit_change <- lmer(pgiccd ~ transition + (1|subjectid), data = analyse_change)
+
+
+```
+
+```{r}
+analyse_change %>% 
+  group_by(transition) %>% 
+  summarise(mean = mean(pgiccd), sd = sd(pgiccd)) %>% 
+  kable(col.names = c("", "Mean", "SD"))
+
+ avg_comparisons(fit_change, variables = "transition") %>% 
+   broom::tidy() %>% 
+   select(-term,  -starts_with("predicted"), -statistic) %>% 
+   kable(digits = 3)
+```
+
+
+
+
+## Secondary outcome: Patient blinding question
+### Descriptive table by participant
+
+```{r}
+db_blinding <- adprom %>% 
+  filter(rantrt != "Baseline" & !is.na(pbqcd)) %>%
+  select(subjectid, rantrt, period, pair,pbq, pbqcd) %>% 
+  mutate(pbq_ = as.character(pbq))
+
+
+
+f_antbl_period(db_blinding, "pbq")
+
+
+```
+
+```{r}
+
+lyt <- basic_table(subtitles =c("Full analysis set", "Patient Blinding Quesiton")) %>% 
+  split_cols_by("rantrt") %>% 
+  analyze("pbq", afun = s_summary) 
+  
+tbl_blind <- build_table(lyt, db_blinding) %>% 
+    tt_to_flextable() %>% 
+    autofit()
+
+tbl_blind
+
+
+```
+```{r, include = FALSE}
+chisq <-  chisq.test(db_blinding$rantrt, db_blinding$pbqcd)
+fisher <-  fisher.test(db_blinding$rantrt, db_blinding$pbqcd)
+
+```
+P-value of the null hypothesis chi-squared test: `r format.pval(chisq$p.value, digits = 2, eps = 0.001)`. 
+
+P-value of the null hypothesis Fisher test: `r format.pval(fisher$p.value, digits = 2, eps = 0.001)`. 
+
+
+
+
+## Secondary endpoint: Hopkins Symptom Checklist-25 mean score
+### Plot
+```{r, fig.fullwidth = TRUE, fig.width = 10, fig.height = 7, warning = FALSE}
+f_anplot1(adprom, "hscl_score")
+
+```
+### Descriptive table
+
+```{r }
+
+f_antbl2_period(adprom, "hscl_score")
+
+```
+
+### Hypothesis test
+
+```{r}
+
+res <- f_antbl_overall(adprom, "hscl_score")
+
+res$tbl
+
+```
+
+Values are Burst stimulation - Sham.
+
+
+P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits = 2, eps = 0.001)`.
+
+### Treatment effect estimates
+
+QQ-plot
+```{r}
+res <- f_mixed2(adprom, "hscl_score")
+qqnorm(residuals(res$fit))
+ 
+```
+
+By subject
+```{r}
+
+res$by_subj %>% 
+  knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+ 
+```
+
+Overall
+```{r}
+res$overall %>% 
+  knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+```
+
+## Carry over effect
+
+First fit the model:
+```{r}
+prevtrt <- adprom %>% 
+  select(subjectid, rantrt, period) %>% 
+  unique()
+
+prevtrt <- prevtrt %>% 
+  group_by(subjectid) %>% 
+  mutate(prevtrt = lag(rantrt)) %>% 
+  select(-rantrt)
+
+data <- adprom %>% 
+  left_join(prevtrt, by = c("subjectid", "period")) %>% 
+  filter(rantrt != "Baseline") %>% 
+  mutate(prevtrt = if_else(prevtrt == "Baseline", "Sham", prevtrt)) %>% 
+  mutate(rantrt = factor(rantrt),
+         pair = factor(pair),
+         prevtrt = factor(prevtrt))
+
+fit8<- lmer(painleg3 ~ rantrt + pair + prevtrt  + prevtrt:rantrt + (1|subjectid) + (1|subjectid:pair) + (1|subjectid:rantrt), data = data)
+
+
+summary(fit8)
+
+
+```
+Then plot the expected outcome by current and previous treatment:
+```{r}
+tmp <- hypotheses(fit8) %>% 
+  tidy() 
+
+###
+# To show that the next expression gives results as expected. 
+# p <-predictions(fit8, newdata = datagrid(rantrt = c("Sham", "Burst stimulation"), prevtrt = c("Sham", "Burst stimulation"), grid_type = "counterfactual"))
+# p %>% group_by(prevtrt, rantrt) %>% summarise(estimate = mean(estimate))
+# aggregate(estimate ~ rantrt + prevtrt + rantrt:prevtrt, data = p, FUN = mean)
+
+avg_predictions(fit8, newdata = datagrid(rantrt = c("Sham", "Burst stimulation"), prevtrt = c("Sham", "Burst stimulation"), grid_type = "counterfactual"), by = c( "prevtrt", "rantrt")) %>% 
+  tidy() %>% 
+  kable(caption = "Outcome by tretment and previous treatment", digits = 3)
+
+
+
+```
+
+Then compute the treatment effect estimate by previous treatment:
+
+```{r}
+avg_comparisons(fit8, variables = "rantrt", newdata = datagrid(rantrt = c("Sham", "Burst stimulation"), prevtrt = c("Sham", "Burst stimulation"), grid_type = "counterfactual"), by = c("prevtrt")) %>% 
+  tidy() %>%  
+  select(-term,  -starts_with("predicted"), -statistic) %>% 
+  kable(digits = 3)
+
+
+```
+
+Finally see if there is a difference:
+```{r}
+cmp <- avg_comparisons(fit8, variables = "rantrt", newdata = datagrid(rantrt = c("Sham", "Burst stimulation"), prevtrt = c("Sham", "Burst stimulation"), grid_type = "counterfactual"), by = c("prevtrt"))
+hypotheses(cmp, hypothesis = "pairwise") %>% 
+  tidy() %>% 
+  select(-term,  -starts_with("predicted"), -statistic) %>% 
+  kable(digits = 3)
+
+```
+
+
+
+
+# Safety Analysis
+
+```{r}
+ko <- raw %>% 
+  pick("ko") %>% 
+  select(subjectid, eventdate, ko_dt, ko_spes, ko_annet)
+
+adae <- adsl %>% 
+  inner_join(ko, by = "subjectid") %>% 
+  select(sitename, subjectid, paticdat, sex, age, ran1dt, randomised, fas, ko_dt, ko_spes, ko_annet)
+
+labels <- var_label(adae, unlist = TRUE)
+
+adae %>% 
+  knitr::kable(col.names = labels)
+
+```
+
+# Suppementary Materials
+
+```{r}
+#report::cite_packages(cite.tidyverse = TRUE, output = "paragraph", out.dir = "data/misc") 
+pkgs <- report::cite_packages(output = "table", out.dir = ".")
+knitr::kable(pkgs)
+```
+
+
+
