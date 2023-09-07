@@ -99,7 +99,8 @@ adprom <- adsl %>%
   left_join(eq5d, by = c("subjectid", "eventseq", "eventid", "eventdate")) %>%
   left_join(hscl, by = c("subjectid", "eventseq", "eventid", "eventdate"))  %>%
   left_join(is, by = c("subjectid", "eventseq", "eventid", "eventdate")) %>%
-  left_join(pgic, by = c("subjectid", "eventseq", "eventid", "eventdate"))  
+  left_join(pgic, by = c("subjectid", "eventseq", "eventid", "eventdate"))  %>% 
+  filter(eventid != "SS0")
 
 
 adprom0 <- adprom %>% 

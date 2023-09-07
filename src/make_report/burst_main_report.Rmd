@@ -54,7 +54,7 @@ This is the report for the first interim analysis of the BURST trial. The data a
 
 `r pr_text` 
 
-There were `r n_distinct(adsl)` included patients of which `r n_distinct(adsl %>% filter(fas))` are included in the full analysis set. 
+There were `r n_distinct(adsl)` included patients of which `r n_distinct(adsl %>% filter(fas))` were randomised and included in the full analysis set. 
 
 # Demographics
 
@@ -83,7 +83,7 @@ dmlabs <- var_label(addm %>% select(-subjectid, -fas), unlist = TRUE)
 ## All randomised
 
 ```{r dm_tbl_all}
-dmlyt <- basic_table(show_colcounts = TRUE, title = "Demographics and baseline characteristics", subtitles = "All randomised") %>%
+dmlyt <- basic_table(show_colcounts = TRUE, title = "Demographics and baseline characteristics", subtitles = "All included") %>%
   analyze(dmvars , afun = s_summary, var_labels = dmlabs)
 
 dm_tbl_all <- build_table(dmlyt, addm) %>%
@@ -96,7 +96,7 @@ dm_tbl_all
 ## Excluded from FAS
 
 ```{r dm_tbl_ex}
-dmlyt <- basic_table(show_colcounts = TRUE, title = "Demographics and baseline characteristics", subtitles = "Excluded from Full Analysis Set") %>%
+dmlyt <- basic_table(show_colcounts = TRUE, title = "Demographics and baseline characteristics", subtitles = "Excluded before randomisation") %>%
   analyze(dmvars , afun = s_summary, var_labels = dmlabs)
 
 dm_tbl_all <- build_table(dmlyt, addm %>% filter(!fas)) %>%
@@ -109,7 +109,7 @@ dm_tbl_all
 
 ```{r dm_tbl_fas}
 
-dmlyt <- basic_table(show_colcounts = TRUE, title = "Demographics and baseline characteristics", subtitles = "Full analysis set") %>%
+dmlyt <- basic_table(show_colcounts = TRUE, title = "Demographics and baseline characteristics", subtitles = "Full analysis set (randomised)") %>%
   analyze(dmvars , afun = s_summary, var_labels = dmlabs)
 
 dm_tbl <- build_table(dmlyt, addm %>% filter(fas)) %>% 
@@ -121,9 +121,9 @@ dm_tbl
 
 
 
-# Dosage
+# Stimulation Amplitude
 
-Information on dosage:
+Information on stimulation amplitude:
 ```{r}
 
 f_antbl2_period(adprom, "trtdose")
@@ -1044,6 +1044,29 @@ adae %>%
   knitr::kable(col.names = labels)
 
 ```
+
+# Parathesia Coverage
+
+```{r}
+isa <- raw %>% 
+  pick("isa") %>% 
+  select(subjectid, eventid, eventdate, starts_with("isa_"))
+
+adsl %>% 
+  filter(fas) %>% 
+  left_join(isa, by = "subjectid") %>% 
+  mutate(par_leg = if_else(!is.na(isa_ben), as.character(isa_ben), as.character(isa_ben__2))) %>% 
+  mutate(par_back = if_else(!is.na(isa_rygg), as.character(isa_rygg), as.character(isa_rygg__2))) %>% 
+  select(sitename, subjectid, par_leg, par_back) %>% 
+  knitr::kable(col.names = c("Site", "Subject ID", "Parathesia Coverage Leg", "Parathesia Coverage Back"))
+
+
+  
+
+
+
+```
+
 
 # Suppementary Materials
 
