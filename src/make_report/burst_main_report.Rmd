@@ -144,7 +144,8 @@ sc <- raw %>%
     eventid == "V05" ~ "V04",
     eventid == "V06" ~ "V05",
     eventid == "V07" ~ "V06"
-  ))
+  )) %>% 
+  set_variable_labels(last_amp = "Stimulation Amplitude from previous period") 
 
 ti <- adran_wide %>% 
   filter(adherent) %>% 
@@ -220,7 +221,7 @@ f_antbl2_period(adprom, "trtdose")
 
 ```
 
-## Stimulation amplitude s registered after treatment period
+## Stimulation amplitude as registered after treatment period
 
 ```{r}
 
