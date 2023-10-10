@@ -27,7 +27,7 @@ library(labelled)
 
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args)==0) {
-  export_name <- "_20230704_090943" #default export
+  export_name <- "_20230919_063242" #default export
 } else if (length(args) != 0) {
   export_name <- args[1]
 }

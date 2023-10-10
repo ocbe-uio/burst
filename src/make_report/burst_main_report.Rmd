@@ -12,7 +12,7 @@ output:
     toc: yes
     df_print: paged
 params:
-  viedoc_export: _20230704_090943
+  viedoc_export: _20230919_063242
   bibliography: data/misc/grateful-refs.bib
 ---
 
@@ -38,6 +38,7 @@ library(flextable)
 
 raw <- read_rds("data/raw/raw.rds")
 adsl <- read_rds("data/ad/adsl.rds")
+adran_wide <- readr::read_rds("data/ad/adran_wide.rds")
 adsl_all <- read_rds("data/ad/adsl_all.rds")
 addm <- read_rds("data/ad/addm.rds")
 adprom <- read_rds("data/ad/adprom.rds")
@@ -121,14 +122,113 @@ dm_tbl
 
 
 
-# Stimulation Amplitude
+# Treatment information
 
-Information on stimulation amplitude:
+```{r}
+
+kn <- raw %>% 
+  pick("kn") %>% 
+  select(subjectid, eventseq, eventid, eventdate, amp = kntvlig1, imp = kntotim) %>% 
+  set_variable_labels(amp = "Amplitude for sensory treshold",
+                      imp = "Impedance") %>% 
+  filter(eventid != "V00_1") %>% 
+  filter(eventid != "V07")
+
+sc <- raw %>% 
+  pick("sc") %>% 
+  select(subjectid, eventid, last_amp = sc_forrige) %>% 
+  mutate(eventid = case_when(
+    eventid == "V02" ~ "V01",
+    eventid == "V03" ~ "V02",
+    eventid == "V04" ~ "V03",
+    eventid == "V05" ~ "V04",
+    eventid == "V06" ~ "V05",
+    eventid == "V07" ~ "V06"
+  ))
+
+ti <- adran_wide %>% 
+  filter(adherent) %>% 
+  left_join(kn, by = "subjectid") %>% 
+  left_join(sc, by = c("subjectid", "eventid")) %>% 
+  mutate(rantrt = case_when(
+    eventdate <= eventdate1 ~ rantrt1,
+    eventdate <= eventdate2 ~ rantrt2,
+    eventdate <= eventdate3 ~ rantrt3,
+    eventdate <= eventdate4 ~ rantrt4,
+    eventdate <= eventdate5 ~ rantrt5,
+    eventdate <= eventdate6 ~ rantrt6,
+    TRUE ~ "Follow-up"
+  )) %>% 
+  mutate(period = case_when(
+    eventdate <= eventdate1 ~ 1,
+    eventdate <= eventdate2 ~ 2,
+    eventdate <= eventdate3 ~ 3,
+    eventdate <= eventdate4 ~ 4,
+    eventdate <= eventdate5 ~ 5,
+    eventdate <= eventdate6 ~ 6,
+    eventdate <= eventdate7 ~ 7,
+    TRUE ~ 7
+  )) %>% 
+  mutate(pair = paste0("Pair ", ceiling(period / 2))) %>% 
+  mutate (pair = if_else(pair == "Pair 0", "Baseline", pair)) %>% 
+  select(-c(eventdate1:eventdate7, rantrt1:rantrt7, trtdose1:trtdose7))
+
+```
+
+
+
+## Amplitude for sensory threshod
+
+```{r}
+
+
+f_antbl3_period <- function(data, var) {
+  label_ <- labelled::var_label(data[[var]])
+  data <- data %>% 
+    mutate(period = factor(period))
+  
+  lyt <- rtables::basic_table(subtitles = c("Period", "Full analysis set", label_)) %>%
+    split_cols_by("period", split_label = "Period") %>% 
+    split_rows_by("subjectid") %>% 
+    analyze(var , afun = mean, var_label = "")
+  
+  prom_tbl_all <- build_table(lyt, data) %>% 
+    tt_to_flextable() %>% 
+    autofit()
+  
+    return(prom_tbl_all)
+}
+```
+
+```{r}
+
+f_antbl3_period(ti, "amp")
+
+```
+
+## Impedance
+```{r}
+
+f_antbl3_period(ti, "imp")
+
+```
+
+## Stimulation Amplitude as set before treatment period
 ```{r}
 
 f_antbl2_period(adprom, "trtdose")
 
 ```
+
+## Stimulation amplitude s registered after treatment period
+
+```{r}
+
+f_antbl2_period(ti, "last_amp")
+
+```
+
+
 
 # Analysis
 
@@ -1055,9 +1155,9 @@ isa <- raw %>%
 adsl %>% 
   filter(fas) %>% 
   left_join(isa, by = "subjectid") %>% 
-  mutate(par_leg = if_else(!is.na(isa_ben), as.character(isa_ben), as.character(isa_ben__2))) %>% 
-  mutate(par_back = if_else(!is.na(isa_rygg), as.character(isa_rygg), as.character(isa_rygg__2))) %>% 
-  select(sitename, subjectid, par_leg, par_back) %>% 
+  #mutate(par_leg = if_else(!is.na(isa_ben), as.character(isa_ben), as.character(isa_ben__2))) %>% 
+  #mutate(par_back = if_else(!is.na(isa_rygg), as.character(isa_rygg), as.character(isa_rygg__2))) %>% 
+  select(sitename, subjectid, par_leg = isa_ben, par_back = isa_rygg) %>% 
   knitr::kable(col.names = c("Site", "Subject ID", "Parathesia Coverage Leg", "Parathesia Coverage Back"))
 
 
@@ -1066,7 +1166,75 @@ adsl %>%
 
 
 ```
+# Listings
 
+```{r}
+
+op <- raw %>% 
+  pick("op") %>% 
+select(subjectid,  eventid, eventdate, opmedend, opmedspe1, opmed7d, opmedspe, opbehov, opmedds, oppattro, opsimcom, oppatsim, op1, oppatbiv, opbivspe, opsvikt, optekspe) 
+
+listing <- adsl %>% 
+  select(subjectid, fas) %>% 
+  filter(fas) %>% 
+  left_join(adran_wide, by = "subjectid") %>% 
+  select(-starts_with("trtdose")) %>% 
+  left_join(op, by = "subjectid") %>% 
+   mutate(rantrt = case_when(
+    eventdate <= eventdate1 ~ "Baseline",
+    eventdate <= eventdate2 ~ rantrt1,
+    eventdate <= eventdate3 ~ rantrt2,
+    eventdate <= eventdate4 ~ rantrt3,
+    eventdate <= eventdate5 ~ rantrt4,
+    eventdate <= eventdate6 ~ rantrt5,
+    eventdate <= eventdate7 ~ rantrt6,
+    TRUE ~ "Follow-up"
+  ))%>% 
+  mutate(period = case_when(
+    eventdate <= eventdate1 ~ 0,
+    eventdate <= eventdate2 ~ 1,
+    eventdate <= eventdate3 ~ 2,
+    eventdate <= eventdate4 ~ 3,
+    eventdate <= eventdate5 ~ 4,
+    eventdate <= eventdate6 ~ 5,
+    eventdate <= eventdate7 ~ 6,
+    TRUE ~ 7
+  )) %>% 
+  mutate(pair = paste0("Pair ", ceiling(period / 2))) %>% 
+  mutate (pair = if_else(pair == "Pair 0", "Baseline", pair)) %>% 
+  mutate(studyday = eventdate - ran1dt) %>% 
+  group_by(subjectid) %>% 
+  mutate(subject = paste0("Subject ",  stringr::str_pad(cur_group_id(), 2, pad="0"))) %>% 
+  ungroup()  %>%  
+  select(-c(eventdate1:eventdate7, rantrt1:rantrt7)) %>% 
+   select(subject, subjectid:adherent, studyday, rantrt,  period, pair, everything()) 
+```
+
+
+## Analgetica
+```{r}
+listing %>% 
+  filter(eventid != "V01") %>% 
+  select(subjectid, studyday, rantrt, period, pair, opmedend, opmedspe1, opmed7d, opmedspe, opbehov, opmedds) %>% 
+  knitr::kable(col.names = c("Subject", "Studyday", "Treatment", "Period", "Pair", "Changed analgetica since last control?", "Specify", "Changed analgetica last 7 days", "Specify", "Any other use of analgetica last 7 days?", "Specify"))
+```
+
+## Adverse reactions to the stimulation
+
+```{r}
+listing %>% 
+  filter(eventid != "V01") %>% 
+  select(subjectid, studyday, rantrt, period, pair, oppatbiv, opbivspe) %>% 
+  knitr::kable(col.names = c("Subject", "Studyday", "Treatment", "Period", "Pair", "Any adverse reactions last 14 days?", "Specify"))
+
+```
+## Technical problems
+```{r}
+listing %>% 
+  filter(eventid != "V01") %>% 
+  select(subjectid, studyday, rantrt, period, pair, opsvikt, optekspe) %>% 
+  knitr::kable(col.names = c("Subject", "Studyday", "Treatment", "Period", "Pair", "Any technical problems last 14 days?", "Specify"))
+```
 
 # Suppementary Materials
 

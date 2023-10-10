@@ -80,13 +80,16 @@ is <- raw %>%
   
 pgic <- raw %>% 
   pick("pgic") %>% 
-  select(subjectid, eventseq, eventid, eventdate, pgic = pgic_end, pgiccd = pgic_endcd, pbq = pgic_sti, pbqcd = pgic_sticd) %>% 
+  select(subjectid, eventseq, eventid, eventdate, pgic = pgic_end, pgiccd = pgic_endcd, 
+         pbq = pgic_sti, pbqcd = pgic_sticd) %>% 
   set_variable_labels(pgic = "Patient Global Impression of Change last 14 days",
                       pgiccd = "PGIC - Code",
                       pbq = "Patient blinding question",
                       pbqcd = "Patient blinding question - Code")
 
 
+
+  
 
 adprom <- adsl %>% 
   select(subjectid, fas) %>% 
@@ -105,33 +108,33 @@ adprom <- adsl %>%
 
 adprom0 <- adprom %>% 
   mutate(rantrt = case_when(
-    eventdate < eventdate1 ~ "Baseline",
-    eventdate < eventdate2 ~ rantrt1,
-    eventdate < eventdate3 ~ rantrt2,
-    eventdate < eventdate4 ~ rantrt3,
-    eventdate < eventdate5 ~ rantrt4,
-    eventdate < eventdate6 ~ rantrt5,
-    eventdate < eventdate7 ~ rantrt6,
+    eventdate <= eventdate1 ~ "Baseline",
+    eventdate <= eventdate2 ~ rantrt1,
+    eventdate <= eventdate3 ~ rantrt2,
+    eventdate <= eventdate4 ~ rantrt3,
+    eventdate <= eventdate5 ~ rantrt4,
+    eventdate <= eventdate6 ~ rantrt5,
+    eventdate <= eventdate7 ~ rantrt6,
     TRUE ~ "Follow-up"
   )) %>%
   mutate(trtdose = case_when(
-    eventdate < eventdate1 ~ 0,
-    eventdate < eventdate2 ~ trtdose1,
-    eventdate < eventdate3 ~ trtdose2,
-    eventdate < eventdate4 ~ trtdose3,
-    eventdate < eventdate5 ~ trtdose4,
-    eventdate < eventdate6 ~ trtdose5,
-    eventdate < eventdate7 ~ trtdose6,
+    eventdate <= eventdate1 ~ 0,
+    eventdate <= eventdate2 ~ trtdose1,
+    eventdate <= eventdate3 ~ trtdose2,
+    eventdate <= eventdate4 ~ trtdose3,
+    eventdate <= eventdate5 ~ trtdose4,
+    eventdate <= eventdate6 ~ trtdose5,
+    eventdate <= eventdate7 ~ trtdose6,
     TRUE ~ 0
   )) %>% 
   mutate(period = case_when(
-    eventdate < eventdate1 ~ 0,
-    eventdate < eventdate2 ~ 1,
-    eventdate < eventdate3 ~ 2,
-    eventdate < eventdate4 ~ 3,
-    eventdate < eventdate5 ~ 4,
-    eventdate < eventdate6 ~ 5,
-    eventdate < eventdate7 ~ 6,
+    eventdate <= eventdate1 ~ 0,
+    eventdate <= eventdate2 ~ 1,
+    eventdate <= eventdate3 ~ 2,
+    eventdate <= eventdate4 ~ 3,
+    eventdate <= eventdate5 ~ 4,
+    eventdate <= eventdate6 ~ 5,
+    eventdate <= eventdate7 ~ 6,
     TRUE ~ 7
   )) %>% 
   mutate(pair = paste0("Pair ", ceiling(period / 2))) %>% 
