@@ -72,34 +72,34 @@ adran <- adran %>%
                       adherent = "Adherent") 
 
 
-#############################
-# Introduce pseudorandomisation
-# Remove when running final analysis
-###############################
-
-adran <- adran %>% 
-  mutate(eventno = str_extract(eventid, "\\d+"),
-         eventno = as.numeric(eventno)) %>% 
-  mutate(period = ceiling(eventno / 2)) %>% 
-  group_by(subjectid, period) %>% 
-  mutate(coin = sample(c(0,1), size = 1, prob = c(0.5, 0.5))) %>%
-  mutate(rantrt = if_else(coin == 0, rantrt,
-                             case_when(
-                               row_number() == 1 ~ lead(rantrt),
-                               row_number() == 2 ~ lag(rantrt)
-                             ))) %>% 
-  mutate(trt = if_else(coin == 0, trt,
-                             case_when(
-                               row_number() == 1 ~ lead(trt),
-                               row_number() == 2 ~ lag(trt)
-                             ))) %>% 
-  mutate(trtdose = if_else(coin == 0, trtdose,
-                             case_when(
-                               row_number() == 1 ~ lead(trtdose),
-                               row_number() == 2 ~ lag(trtdose)
-                             ))) %>% 
-  select(-coin) %>% 
-  ungroup()
+# #############################
+# # Introduce pseudorandomisation
+# # Remove when running final analysis
+# ###############################
+# 
+# adran <- adran %>% 
+#   mutate(eventno = str_extract(eventid, "\\d+"),
+#          eventno = as.numeric(eventno)) %>% 
+#   mutate(period = ceiling(eventno / 2)) %>% 
+#   group_by(subjectid, period) %>% 
+#   mutate(coin = sample(c(0,1), size = 1, prob = c(0.5, 0.5))) %>%
+#   mutate(rantrt = if_else(coin == 0, rantrt,
+#                              case_when(
+#                                row_number() == 1 ~ lead(rantrt),
+#                                row_number() == 2 ~ lag(rantrt)
+#                              ))) %>% 
+#   mutate(trt = if_else(coin == 0, trt,
+#                              case_when(
+#                                row_number() == 1 ~ lead(trt),
+#                                row_number() == 2 ~ lag(trt)
+#                              ))) %>% 
+#   mutate(trtdose = if_else(coin == 0, trtdose,
+#                              case_when(
+#                                row_number() == 1 ~ lead(trtdose),
+#                                row_number() == 2 ~ lag(trtdose)
+#                              ))) %>% 
+#   select(-coin) %>% 
+#   ungroup()
 
 # Remove until here
 ###########################################################
@@ -118,6 +118,9 @@ adran_wide <- adran %>%
   select(-(adherent1:adherent7))
 
 adran <- adran %>% 
+  mutate(eventno = str_extract(eventid, "\\d+"),
+         eventno = as.numeric(eventno)) %>% 
+  mutate(period = ceiling(eventno / 2)) %>% 
   mutate(pair = period, 
          period = eventno) %>% 
   select(-eventno) %>% 

@@ -45,9 +45,9 @@ adprom <- read_rds("data/ad/adprom.rds")
 source("src/external/functions.R", local = knitr::knit_global())
 export_date = substr(params$viedoc_export,2,9) %>% lubridate::as_datetime()
 
-pr_text = "While the results are based on real data, the treatment allocation has been drawn randomly for this report. Thus, this is a mock-up report intended to show how the final report will look like, without showing the actual results of the trial and the treatment differences."
+#pr_text = "While the results are based on real data, the treatment allocation has been drawn randomly for this report. Thus, this is a mock-up report intended to show how the final report will look like, without showing the actual results of the trial and the treatment differences."
 
-#pr_text = "The results in this report is according to the true random allocation. "
+pr_text = "The results in this report is according to the true random allocation. "
 
 ```
 # Introduction
@@ -826,7 +826,7 @@ P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits =
 
 QQ-plot
 ```{r}
-res <- f_mixed(adprom, "eq5dui")
+res <- f_mixed3(adprom, "eq5dui")
 qqnorm(residuals(res$fit))
  
 ```
@@ -881,7 +881,7 @@ P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits =
 
 QQ-plot
 ```{r}
-res <- f_mixed(adprom, "eq5dvas")
+res <- f_mixed3(adprom, "eq5dvas")
 qqnorm(residuals(res$fit))
  
 ```
@@ -1038,7 +1038,7 @@ P-value of the null hypothesis test: `r format.pval(res$t.test$p.value, digits =
 
 QQ-plot
 ```{r}
-res <- f_mixed2(adprom, "hscl_score")
+res <- f_mixed3(adprom, "hscl_score")
 qqnorm(residuals(res$fit))
  
 ```

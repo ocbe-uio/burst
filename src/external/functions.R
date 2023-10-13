@@ -221,6 +221,33 @@ f_mixed2 <- function(data, var) {
   return(list(by_subj = by_subj, overall = overall, fit = fit7))
 }
 
+f_mixed3 <- function(data, var) {
+  var_ = ensym(var)
+  label_ <- labelled::var_label(data[[var]])
+  
+  
+  data_ <- data %>% 
+    filter(rantrt != "Baseline") %>% 
+    mutate(rantrt = factor(rantrt),
+           pair = factor(pair))
+  
+  
+  fit7 <- rlang::inject(lme4::lmer(!!var_ ~ rantrt + pair  +  (1|subjectid:rantrt), data = data_))
+  
+  
+  
+  by_subj <- marginaleffects::avg_comparisons(fit7, variables = list(rantrt = c("Sham", "Burst stimulation")), newdata = datagrid(rantrt = c("Sham", "Burst stimulation"), 
+                                                                                                                                  grid_type = "counterfactual"), by = "subjectid")  %>% 
+    broom::tidy() %>% 
+    select(-term, -contrast, -starts_with("predicted"), -statistic) 
+  
+  overall <- marginaleffects::avg_comparisons(fit7, variables = list(rantrt = c("Sham", "Burst stimulation")), newdata = datagrid(rantrt = c("Sham", "Burst stimulation"), 
+                                                                                                                                  grid_type = "counterfactual")) %>% 
+    broom::tidy() %>% 
+    select(-term, -contrast, -starts_with("predicted"), -statistic) 
+  
+  return(list(by_subj = by_subj, overall = overall, fit = fit7))
+}
 
 
 stats_exec <- function(f, data, var, group, ...){
