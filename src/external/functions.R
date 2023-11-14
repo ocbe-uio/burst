@@ -186,12 +186,21 @@ f_mixed <- function(data, var) {
     broom::tidy() %>% 
     select(-term, -contrast, -starts_with("predicted"), -statistic) 
     
-  overall <- marginaleffects::avg_comparisons(fit7, variables = list(rantrt = c("Sham", "Burst stimulation")), newdata = datagrid(rantrt = c("Sham", "Burst stimulation"), 
-                                                                                                                                grid_type = "counterfactual")) %>% 
+  overall <- marginaleffects::avg_comparisons(fit7, 
+                                              variables = list(rantrt = c("Sham", "Burst stimulation")), 
+                                              newdata = datagrid(rantrt = c("Sham", "Burst stimulation"), 
+                                              grid_type = "counterfactual")) %>% 
     broom::tidy() %>% 
     select(-term, -contrast, -starts_with("predicted"), -statistic) 
+  
+  by_trt <- marginaleffects::avg_predictions(fit7, 
+                                   variables = list(rantrt = c("Sham", "Burst stimulation")), 
+                                   newdata = datagrid(rantrt = c("Sham", "Burst stimulation"), 
+                                                      grid_type = "counterfactual")) %>% 
+    broom::tidy() %>% 
+    select(-statistic) 
 
-  return(list(by_subj = by_subj, overall = overall, fit = fit7))
+  return(list(by_subj = by_subj, overall = overall, fit = fit7, by_trt = by_trt))
 }
 f_mixed2 <- function(data, var) {
   var_ = ensym(var)
@@ -218,7 +227,14 @@ f_mixed2 <- function(data, var) {
     broom::tidy() %>% 
     select(-term, -contrast, -starts_with("predicted"), -statistic) 
   
-  return(list(by_subj = by_subj, overall = overall, fit = fit7))
+  by_trt <- marginaleffects::avg_predictions(fit7, 
+                                             variables = list(rantrt = c("Sham", "Burst stimulation")), 
+                                             newdata = datagrid(rantrt = c("Sham", "Burst stimulation"), 
+                                                                grid_type = "counterfactual")) %>% 
+    broom::tidy() %>% 
+    select(-statistic) 
+  
+  return(list(by_subj = by_subj, overall = overall, fit = fit7, by_trt = by_trt))
 }
 
 f_mixed3 <- function(data, var) {
@@ -246,7 +262,14 @@ f_mixed3 <- function(data, var) {
     broom::tidy() %>% 
     select(-term, -contrast, -starts_with("predicted"), -statistic) 
   
-  return(list(by_subj = by_subj, overall = overall, fit = fit7))
+  by_trt <- marginaleffects::avg_predictions(fit7, 
+                                             variables = list(rantrt = c("Sham", "Burst stimulation")), 
+                                             newdata = datagrid(rantrt = c("Sham", "Burst stimulation"), 
+                                                                grid_type = "counterfactual")) %>% 
+    broom::tidy() %>% 
+    select(-statistic) 
+  
+  return(list(by_subj = by_subj, overall = overall, fit = fit7, by_trt = by_trt))
 }
 
 

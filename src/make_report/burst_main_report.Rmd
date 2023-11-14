@@ -1,5 +1,5 @@
 ---
-title: "BURST Statistical Mock-up Report"
+title: "BURST Statistical Final Report"
 author: "Inge Christoffer Olsen, PhD"
 date: '`r format(Sys.time(), "%d %B, %Y")` '
 output:
@@ -119,7 +119,31 @@ dm_tbl <- build_table(dmlyt, addm %>% filter(fas)) %>%
 dm_tbl
 
 ```
+## Pain etc at baseline
 
+```{r painbl_tbl_fas}
+
+painvars <- names(adprom %>% select(painleg1:hscl_score, isi_score))
+painlabs <- var_label(adprom %>% select(painleg1:hscl_score, isi_score), unlist = TRUE)
+
+
+
+painbl_cont <- adprom %>% 
+  filter(fas) %>% 
+  filter(period == 0) %>% 
+  group_by(subjectid) %>% 
+  summarise(across(all_of(painvars), ~ mean(.x, na.rm = TRUE)))
+
+
+bllyt <- basic_table(show_colcounts = TRUE, title = "Mean pain etc at baseline", subtitles = "Full analysis set (randomised)") %>%
+  analyze(painvars , afun = s_summary, var_labels = painlabs)
+
+dm_tbl <- build_table(bllyt, painbl_cont) %>% 
+  tt_to_flextable() %>% 
+  autofit()
+dm_tbl
+
+```
 
 
 # Treatment information
@@ -283,6 +307,9 @@ res$by_subj %>%
 
 Overall
 ```{r}
+res$by_trt %>% 
+  knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+
 res$overall %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
@@ -335,8 +362,11 @@ res$by_subj %>%
  
 ```
 
-Overall
+By treatment and Overall
 ```{r}
+res$by_trt %>% 
+  knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+
 res$overall %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
@@ -391,8 +421,11 @@ res$by_subj %>%
  
 ```
 
-Overall
+By treatment and overall
 ```{r}
+res$by_trt %>% 
+  knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+
 res$overall %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
@@ -447,8 +480,11 @@ res$by_subj %>%
  
 ```
 
-Overall
+By treatment and overall
 ```{r}
+res$by_trt %>% 
+  knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+
 res$overall %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
@@ -503,8 +539,11 @@ res$by_subj %>%
  
 ```
 
-Overall
+By treatment and overall
 ```{r}
+res$by_trt %>% 
+  knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+
 res$overall %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
@@ -560,8 +599,11 @@ res$by_subj %>%
  
 ```
 
-Overall
+By treatment and overall
 ```{r}
+res$by_trt %>% 
+  knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+
 res$overall %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
@@ -617,8 +659,11 @@ res$by_subj %>%
  
 ```
 
-Overall
+By treatment and overall
 ```{r}
+res$by_trt %>% 
+  knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+
 res$overall %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
@@ -674,8 +719,11 @@ res$by_subj %>%
  
 ```
 
-Overall
+By treatment group and overall
 ```{r}
+res$by_trt %>% 
+  knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+
 res$overall %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
@@ -729,8 +777,11 @@ res$by_subj %>%
  
 ```
 
-Overall
+By treatment and overall
 ```{r}
+res$by_trt %>% 
+  knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+
 res$overall %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
@@ -783,8 +834,13 @@ res$by_subj %>%
  
 ```
 
-Overall
+By treatment and overall
 ```{r}
+
+res$by_trt %>% 
+  knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+
+
 res$overall %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
@@ -839,8 +895,12 @@ res$by_subj %>%
  
 ```
 
-Overall
+By treatment and overall
 ```{r}
+
+res$by_trt %>% 
+  knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+
 res$overall %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
@@ -894,8 +954,11 @@ res$by_subj %>%
  
 ```
 
-Overall
+By treatment and overall
 ```{r}
+res$by_trt %>% 
+  knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+
 res$overall %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
@@ -1051,8 +1114,12 @@ res$by_subj %>%
  
 ```
 
-Overall
+By treatment and overall
 ```{r}
+
+res$by_trt %>% 
+  knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
+
 res$overall %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
