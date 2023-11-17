@@ -132,7 +132,14 @@ painbl_cont <- adprom %>%
   filter(fas) %>% 
   filter(period == 0) %>% 
   group_by(subjectid) %>% 
-  summarise(across(all_of(painvars), ~ mean(.x, na.rm = TRUE)))
+  summarise(across(all_of(painvars), ~ mean(.x, na.rm = TRUE))) %>% 
+  mutate(hscl_score_cat = cut(hscl_score, c(0,1.76, 100), c("HSCL ≤ 1.75", "HSCL > 1.75")),
+         isi_score_cat = cut(isi_score, c(7.5, 14.5, 28.5), c("ISI 8-14", "ISI 15-28"))) %>% 
+  set_variable_labels(hscl_score_cat = "HSCL score categorised at 1.75", 
+                      isi_score_cat = "ISI score categorised at 15")
+
+painvars <- names(painbl_cont %>% select(-subjectid))
+painlabs <- c(painlabs,"HSCL score categorised at 1.75", "ISI score categorised at 15")
 
 
 bllyt <- basic_table(show_colcounts = TRUE, title = "Mean pain etc at baseline", subtitles = "Full analysis set (randomised)") %>%

@@ -1,0 +1,10 @@
+Hei
+Jeg driver med Tabell 1, og skulle gjerne hatt noen tall som jeg ikke finner i rapporten. Kanskje dette er noe du kunne hoste opp for meg? J
+1) Utdanningsnivå.
+2) Pain Catastropizing Scale: kan du du gi antall som scorer >24, som er cut-off for klinisk signifikant smertekatastrofering iflg Sullivan (og vårt register).
+3) Hopkins Symptom Checklist-25: kan du gi antall >1,75? (dette er cut-offen som vi benytter i registeret)
+4) Insomnia Severity Index score: kan du gi antall i:
+  •8-14 poeng: subklinisk insomni (fra vårt register)
+•15-28 poeng: sannsynlig insomni
+Og ett spørsmål til:
+  Fra baseline 3.4; Er EQ5D riktig? Hvis gjennomsnittet er 0,71 ved baseline så er det tett opp mot normalskåring, som er mellom 0,83 og 0,93 i normalpopulasjon…

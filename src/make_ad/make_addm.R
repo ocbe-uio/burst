@@ -122,7 +122,7 @@ bi <- raw %>%
          dmchild = bibarn,
          dmwork, 
          dmworkhrs = as_pros,
-         dmoutwork = as_ute, dmsupport) %>% 
+         dmoutwork = as_ute, dmsupport, dmedu = bi_utdan) %>% 
   mutate(dmoutwork = if_else(dmoutwork == 2019, 2, dmoutwork)) %>% 
   mutate(across(c(dmmstatus, dmwork, dmsupport), factor)) %>% 
   set_variable_labels(
@@ -131,7 +131,8 @@ bi <- raw %>%
     dmwork = "Working?", 
     dmworkhrs = "Working hours per week",
     dmoutwork = "Years not working", 
-    dmsupport = "Type of governmental support"
+    dmsupport = "Type of governmental support", 
+    dmedu = "Completed education"
   )
 
 #Pain Catastrophizing Scale
@@ -143,11 +144,13 @@ pcs <- raw %>%
          pcsmag = rowSums(across(c(pcs_6cd, pcs_7cd, pcs_13cd))),
          pcshelp = rowSums(across(c(num_range("pcs_", range = 1:5, suffix = "cd"), pcs_12cd)))
   ) %>% 
+  mutate(pcstot_cat = cut(pcstot, c(0, 24.5, 100), labels = c("PCS ≤ 24", "PCS > 24" ))) %>% 
   set_variable_labels(pcstot = "PCS Total score",
                       pcsrum = "PCS Rumination",
                       pcsmag = "PCS Magnification",
-                      pcshelp = "PCS Helplessness") %>% 
-  select(subjectid, pcstot:pcshelp)
+                      pcshelp = "PCS Helplessness",
+                      pcstot_cat = "PCS Total score dichotomised at 24") %>% 
+  select(subjectid, pcstot:pcshelp, pcstot_cat)
          
 
 
