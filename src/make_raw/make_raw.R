@@ -62,29 +62,111 @@ items <- read_csv(glue("{export_folder}/{export_name}_Items.csv"), skip = 1) %>%
     datatype == "text" ~ "c"
   ))
 
+
+items <- read_csv(file.path(export_folder, paste0(export_name, "_Items.csv")), skip = 1, show_col_types = FALSE) %>%
+  rename_all(tolower) %>%
+  mutate(id_ = id,
+         id = tolower(id)) %>%
+  mutate(categorical = if_else(!is.na(formatname), 2,
+                               if_else(paste0(id, "cd") == lead(id), 1, 0)
+  )) %>%
+  mutate(formatname = if_else(categorical == 1, lead(formatname), formatname)) %>%
+  left_join(cl, by = "formatname") %>%
+  rename_all(tolower) %>% 
+  mutate(cols_abb = case_when(
+    datatype == "date" ~ "D",
+    datatype == "datetime" ~ "T",
+    datatype == "double" ~ "d",
+    datatype == "integer" ~ "i",
+    datatype == "string" ~ "c",
+    datatype == "text" ~ "c"
+  )) %>% 
+  mutate(cols_abb = if_else(id == "designversion", "d", cols_abb))
+
   
+my_read_csv <- function(file){
+  my_cols <- read_csv(file, skip = 1, n_max = 1, show_col_types = FALSE) %>% 
+    colnames() %>% 
+    as_tibble_col(column_name = "id_")
+  
+  my_col_types <- my_cols %>% 
+    left_join(items %>% select(id_, cols_abb), by = "id_") %>% 
+    mutate(cols_abb = if_else(is.na(cols_abb), "?", cols_abb)) 
+  
+  my_col_types <- setNames(as.list(my_col_types$cols_abb), my_col_types$id_)
+  
+  data <- read_csv(file, col_types = my_col_types, skip = 1, show_col_types = FALSE)
+  return(data)
+}
 
 
-col_types <- setNames(as.list(items$cols_abb), items$id)
-
-
-prefix <- str_sub(export_folder, -16)
 raw <- tibble(files = list.files(export_folder)) %>%
   mutate(
     id = str_remove(files, paste0(prefix, "_")),
     id = str_remove(id, ".csv"),
     id = str_to_lower(id),
-    files = paste0(export_folder, "/", files)
+    files = file.path(export_folder, files)
   ) %>%
   filter(!(id %in% c("items", "codelists", "readme.txt"))) %>%
-  mutate(txt = map(files, read_csv, col_types = col_types, skip = 1)) %>%
+  filter(!endsWith(id, ".sas")) %>% 
+  mutate(txt = map(files, my_read_csv)) %>%
+  mutate(problems = map(txt, problems),
+         any_problems = map_chr(problems, \(x) if_else(nrow(x) != 0, "Yes", "No"))) %>% 
   mutate(txt = map(txt, rename_all, tolower)) %>%
   mutate(txt = map(txt, labeliser, codelist = items)) %>%
-  mutate(data = map(txt, factoriser, codelist = items)) %>%
-  mutate(data = map(data, ~ mutate_if(., haven::is.labelled, as.numeric))) %>% 
-  add_row(files= glue("{export_name}_CodeLists.csv"), id = "codelist", txt = list(cl), data = list(cl)) %>% 
-  add_row(files= glue("{export_name}_Items.csv"), id = "items", txt = list(items), data = list(items)) %>% 
-  mutate(data = map(data, labeliser, codelist = items))
+  mutate(data_lbl = map(txt, factoriser, codelist = items)) %>%
+  mutate(data = map(data_lbl, haven::zap_labels)) %>% 
+  add_row(files = file.path(export_folder, glue("{export_name}_CodeLists.csv")), 
+          id = "codelist", 
+          txt = list(cl), 
+          data = list(cl), 
+          data_lbl = list(cl), 
+          any_problems = "No") %>% 
+  add_row(files = file.path(export_folder, glue("{export_name}_Items.csv")), 
+          id = "items", 
+          txt = list(items), 
+          data = list(items), 
+          data_lbl = list(cl),
+          any_problems = "No") 
+
+raw <- raw %>% 
+  #mutate(data = map(data,remove_cd)) %>%  # de-comment to remove the "cd" variables
+  mutate(data = map(data, labeliser, codelist = items)) %>% 
+  mutate(data_lbl = map(data_lbl, remove_fct, codelist = items)) %>% 
+  mutate(data_lbl = map(data_lbl, labeliser, codelist = items)) %>% 
+  set_variable_labels(
+    files = "Path to file",
+    id = "ID",
+    txt = "Raw import",
+    data_lbl = "With value labels for export",
+    data = "For analyses (value labels removed)",
+    any_problems = "Any problems with the import?",
+    problems = "Table of problems"
+  ) %>% 
+  select(files:id, any_problems, problems, txt, data_lbl:data) %>% 
+  mutate(problems = if_else(any_problems == "Yes", problems, as.vector(NA)))
+
+# 
+# col_types <- setNames(as.list(items$cols_abb), items$id)
+# 
+# 
+# prefix <- str_sub(export_folder, -16)
+# raw <- tibble(files = list.files(export_folder)) %>%
+#   mutate(
+#     id = str_remove(files, paste0(prefix, "_")),
+#     id = str_remove(id, ".csv"),
+#     id = str_to_lower(id),
+#     files = paste0(export_folder, "/", files)
+#   ) %>%
+#   filter(!(id %in% c("items", "codelists", "readme.txt"))) %>%
+#   mutate(txt = map(files, read_csv, col_types = col_types, skip = 1)) %>%
+#   mutate(txt = map(txt, rename_all, tolower)) %>%
+#   mutate(txt = map(txt, labeliser, codelist = items)) %>%
+#   mutate(data = map(txt, factoriser, codelist = items)) %>%
+#   mutate(data = map(data, ~ mutate_if(., haven::is.labelled, as.numeric))) %>% 
+#   add_row(files= glue("{export_name}_CodeLists.csv"), id = "codelist", txt = list(cl), data = list(cl)) %>% 
+#   add_row(files= glue("{export_name}_Items.csv"), id = "items", txt = list(items), data = list(items)) %>% 
+#   mutate(data = map(data, labeliser, codelist = items))
 
 
 write_rds(raw, "data/raw/raw.rds")
