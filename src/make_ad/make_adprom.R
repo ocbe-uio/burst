@@ -47,6 +47,11 @@ psfs <- raw %>%
                       psfs3 = "Ability to do third activity (higher is better)"
                       )
   
+psfs <- psfs %>% 
+  rowwise() %>%
+  mutate(psfs = mean(c(psfs1, psfs2, psfs3), na.rm = TRUE)) %>%
+  ungroup() %>% 
+  set_variable_labels(psfs = "Patient Specific Functional Scale (PSFS) Total Score")
 
       
   eq5d <- raw %>% 

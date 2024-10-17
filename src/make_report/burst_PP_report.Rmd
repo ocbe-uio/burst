@@ -1,5 +1,5 @@
 ---
-title: "BURST Statistical Final Report"
+title: "BURST Statistical Per Protocol Report"
 author: "Inge Christoffer Olsen, PhD"
 date: '`r format(Sys.time(), "%d %B, %Y")` '
 output:
@@ -37,11 +37,16 @@ library(flextable)
 ```{r load-datasets, include = FALSE}
 
 raw <- read_rds("data/raw/raw.rds")
-adsl <- read_rds("data/ad/adsl.rds")
-adran_wide <- readr::read_rds("data/ad/adran_wide.rds")
-adsl_all <- read_rds("data/ad/adsl_all.rds")
-addm <- read_rds("data/ad/addm.rds")
-adprom <- read_rds("data/ad/adprom.rds")
+adsl <- read_rds("data/ad/adsl.rds") %>% 
+  filter(subjectid != "3-009")
+adran_wide <- readr::read_rds("data/ad/adran_wide.rds") %>% 
+  filter(subjectid != "3-009")
+adsl_all <- read_rds("data/ad/adsl_all.rds") %>% 
+  filter(subjectid != "3-009")
+addm <- read_rds("data/ad/addm.rds") %>% 
+  filter(subjectid != "3-009")
+adprom <- read_rds("data/ad/adprom.rds") %>% 
+  filter(subjectid != "3-009")
 source("src/external/functions.R", local = knitr::knit_global())
 export_date = substr(params$viedoc_export,2,9) %>% lubridate::as_datetime()
 
@@ -51,7 +56,7 @@ pr_text = "The results in this report is according to the true random allocation
 
 ```
 # Introduction
-This is the report for the first interim analysis of the BURST trial. The data are based on an export from the Viedoc electronic data capture at `r export_date` system time stamped "`r params$viedoc_export`". 
+This is the report for the per protocol analysis of the BURST trial where patient 3-009 has been taken out (wrong inclusion). The data are based on an export from the Viedoc electronic data capture at `r export_date` system time stamped "`r params$viedoc_export`". 
 
 `r pr_text` 
 
@@ -159,6 +164,7 @@ dm_tbl
 
 kn <- raw %>% 
   pick("kn") %>% 
+  filter(subjectid != "3-009") %>%
   select(subjectid, eventseq, eventid, eventdate, amp = kntvlig1, imp = kntotim) %>% 
   set_variable_labels(amp = "Amplitude for sensory treshold",
                       imp = "Impedance") %>% 
@@ -167,6 +173,7 @@ kn <- raw %>%
 
 sc <- raw %>% 
   pick("sc") %>% 
+  filter(subjectid != "3-009") %>%
   select(subjectid, eventid, last_amp = sc_forrige) %>% 
   mutate(eventid = case_when(
     eventid == "V02" ~ "V01",
@@ -307,17 +314,20 @@ qqnorm(residuals(res$fit))
 
 By subject
 ```{r}
-res$by_subj %>%   select(-s.value) %>%     
+res$by_subj %>%
+  select(-s.value) %>% 
   knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
  
 ```
 
 Overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>% 
+  select(-s.value, -term) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
-res$overall %>%    select(-s.value) %>% 
+res$overall %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
 
@@ -364,17 +374,20 @@ qqnorm(residuals(res$fit))
 By subject
 ```{r}
 
-res$by_subj %>%   select(-s.value) %>% 
+res$by_subj %>% 
+  select(-s.value) %>% 
   knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
  
 ```
 
 By treatment and Overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>% 
+    select(-s.value, -term) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
-res$overall %>%    select(-s.value) %>% 
+res$overall %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
 
@@ -423,17 +436,20 @@ qqnorm(residuals(res$fit))
 By subject
 ```{r}
 
-res$by_subj %>%   select(-s.value) %>% 
+res$by_subj %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
  
 ```
 
 By treatment and overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>% 
+    select(-s.value, -term) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
-res$overall %>%    select(-s.value) %>% 
+res$overall %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
 
@@ -482,17 +498,20 @@ qqnorm(residuals(res$fit))
 By subject
 ```{r}
 
-res$by_subj %>%   select(-s.value) %>% 
+res$by_subj %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
  
 ```
 
 By treatment and overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>% 
+    select(-s.value, -term) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
-res$overall %>%    select(-s.value) %>% 
+res$overall %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
 
@@ -541,17 +560,20 @@ qqnorm(residuals(res$fit))
 By subject
 ```{r}
 
-res$by_subj %>%   select(-s.value) %>% 
+res$by_subj %>%   
+  select(-s.value) %>% 
   knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
  
 ```
 
 By treatment and overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>% 
+    select(-s.value, - term) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
-res$overall %>%    select(-s.value) %>% 
+res$overall %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
 
@@ -601,17 +623,20 @@ qqnorm(residuals(res$fit))
 By subject
 ```{r}
 
-res$by_subj %>%   select(-s.value) %>% 
+res$by_subj %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
  
 ```
 
 By treatment and overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>% 
+    select(-s.value, -term) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
-res$overall %>%    select(-s.value) %>% 
+res$overall %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
 
@@ -661,19 +686,20 @@ qqnorm(residuals(res$fit))
 By subject
 ```{r}
 
-res$by_subj %>%   select(-s.value) %>% 
+res$by_subj %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
  
 ```
 
 By treatment and overall
 ```{r}
-res$by_trt %>%
-   select(-s.value, -term) %>% 
+res$by_trt %>% 
+    select(-s.value, -term) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
-res$overall %>%    
-  select(-s.value) %>% 
+res$overall %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
 
@@ -723,17 +749,20 @@ qqnorm(residuals(res$fit))
 
 By subject
 ```{r}
-res$by_subj %>%   select(-s.value) %>% 
+res$by_subj %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
  
 ```
 
 By treatment group and overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>% 
+    select(-s.value, -term) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
-res$overall %>%    select(-s.value) %>% 
+res$overall %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
 
@@ -781,17 +810,20 @@ qqnorm(residuals(res$fit))
 By subject
 ```{r}
 
-res$by_subj %>%   select(-s.value) %>% 
+res$by_subj %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
  
 ```
 
 By treatment and overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>% 
+    select(-s.value, -term) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
-res$overall %>%    select(-s.value) %>% 
+res$overall %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
 
@@ -852,6 +884,7 @@ res$overall %>%    select(-s.value) %>%
 ```
 
 
+
 ## Secondary endpoint: Insomnia Severity Index questionnaire total score
 ### Plot
 ```{r, fig.fullwidth = TRUE, fig.width = 10, fig.height = 7, warning = FALSE}
@@ -893,7 +926,8 @@ qqnorm(residuals(res$fit))
 By subject
 ```{r}
 
-res$by_subj %>%   select(-s.value) %>% 
+res$by_subj %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
  
 ```
@@ -901,11 +935,13 @@ res$by_subj %>%   select(-s.value) %>%
 By treatment and overall
 ```{r}
 
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>% 
+    select(-s.value, -term) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
 
-res$overall %>%    select(-s.value) %>% 
+res$overall %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
 
@@ -954,7 +990,8 @@ qqnorm(residuals(res$fit))
 By subject
 ```{r}
 
-res$by_subj %>%   select(-s.value) %>% 
+res$by_subj %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
  
 ```
@@ -962,10 +999,12 @@ res$by_subj %>%   select(-s.value) %>%
 By treatment and overall
 ```{r}
 
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>% 
+    select(-s.value, -term) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
-res$overall %>%    select(-s.value) %>% 
+res$overall %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
 
@@ -1013,17 +1052,20 @@ qqnorm(residuals(res$fit))
 By subject
 ```{r}
 
-res$by_subj %>%   select(-s.value) %>% 
+res$by_subj %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
  
 ```
 
 By treatment and overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>% 
+    select(-s.value, -term) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
-res$overall %>%    select(-s.value) %>% 
+res$overall %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
 
@@ -1173,7 +1215,8 @@ qqnorm(residuals(res$fit))
 By subject
 ```{r}
 
-res$by_subj %>%   select(-s.value) %>% 
+res$by_subj %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Subject ID", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
  
 ```
@@ -1181,10 +1224,12 @@ res$by_subj %>%   select(-s.value) %>%
 By treatment and overall
 ```{r}
 
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>% 
+    select(-s.value, -term) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
-res$overall %>%    select(-s.value) %>% 
+res$overall %>% 
+    select(-s.value) %>% 
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
 
@@ -1264,6 +1309,7 @@ hypotheses(cmp, hypothesis = "pairwise") %>%
 ```{r}
 ko <- raw %>% 
   pick("ko") %>% 
+  filter(subjectid != "3-009") %>%
   select(subjectid, eventdate, ko_dt, ko_spes, ko_annet)
 
 adae <- adsl %>% 
@@ -1282,6 +1328,7 @@ adae %>%
 ```{r}
 isa <- raw %>% 
   pick("isa") %>% 
+  filter(subjectid != "3-009") %>%
   select(subjectid, eventid, eventdate, starts_with("isa_"))
 
 adsl %>% 
@@ -1304,11 +1351,13 @@ adsl %>%
 
 op <- raw %>% 
   pick("op") %>% 
+  filter(subjectid != "3-009") %>%
 select(subjectid,  eventid, eventdate, opmedend, opmedspe1, opmed7d, opmedspe, opbehov, opmedds, oppattro, opsimcom, oppatsim, op1, oppatbiv, opbivspe, opsvikt, optekspe) 
 
 listing <- adsl %>% 
   select(subjectid, fas) %>% 
   filter(fas) %>% 
+  filter(subjectid != "3-009") %>%
   left_join(adran_wide, by = "subjectid") %>% 
   select(-starts_with("trtdose")) %>% 
   left_join(op, by = "subjectid") %>% 

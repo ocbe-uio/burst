@@ -12,7 +12,12 @@ adsl <- read_rds("data/ad/adsl.rds")
 
 vs <- raw %>% 
   pick("vs") %>% 
-  select(subjectid, vsweight:vsbmi)
+  select(subjectid, vsweight:vsbmi) %>% 
+  set_variable_labels(
+    vsweight = "Weight (kg)",
+    vsheight = "Height (cm)",
+    vsbmi = "BMI"
+  )
 
 cm <- raw %>% 
   pick("cm") %>% 
@@ -166,7 +171,8 @@ addm <- adsl %>%
   left_join(bi, by = "subjectid") %>% 
   left_join(pcs, by = "subjectid") %>% 
   left_join(cm, by = "subjectid") %>% 
-  left_join(mh, by = "subjectid")
+  left_join(mh, by = "subjectid") %>% 
+  left_join(vs, by = "subjectid") 
 
 readr::write_rds(addm, "data/ad/addm.rds")
 
