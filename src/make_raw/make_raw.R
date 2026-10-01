@@ -102,7 +102,7 @@ my_read_csv <- function(file){
 
 raw <- tibble(files = list.files(export_folder)) %>%
   mutate(
-    id = str_remove(files, paste0(prefix, "_")),
+    id = str_remove(files, paste0(export_name, "_")),
     id = str_remove(id, ".csv"),
     id = str_to_lower(id),
     files = file.path(export_folder, files)

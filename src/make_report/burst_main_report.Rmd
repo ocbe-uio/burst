@@ -27,10 +27,12 @@ library(glue)
 library(knitr)
 library(labelled)
 library(rtables)
+library(rtables.officer)
 library(ggplot2)
 library(lme4)
 library(marginaleffects)
 library(flextable)
+library(rtables.officer)
 
 ```
 
@@ -51,7 +53,7 @@ pr_text = "The results in this report is according to the true random allocation
 
 ```
 # Introduction
-This is the report for the first interim analysis of the BURST trial. The data are based on an export from the Viedoc electronic data capture at `r export_date` system time stamped "`r params$viedoc_export`". 
+This is the report for the final analysis of the BURST trial. The data are based on an export from the Viedoc electronic data capture at `r export_date` system time stamped "`r params$viedoc_export`". 
 
 `r pr_text` 
 
@@ -70,6 +72,8 @@ s_summary <- function(x, .N_col) {
     )
   } else if (is.factor(x)) {
    in_rows(.list = lapply(as.list(table(x)), function(xi) rcell(xi * c(1, 1/.N_col), format = "xx (xx.xx%)")))
+  } else if (all(is.na(x))) {
+    in_rows("n" = rcell(0, format = "xx"))
   } else {
     in_rows(.list = as.list(table(factor(x))))
   }
@@ -314,7 +318,7 @@ res$by_subj %>%   select(-s.value) %>%
 
 Overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>%     select(-s.value, -any_of(c("term", "df"))) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
 res$overall %>%    select(-s.value) %>% 
@@ -371,7 +375,7 @@ res$by_subj %>%   select(-s.value) %>%
 
 By treatment and Overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>%     select(-s.value, -any_of(c("term", "df"))) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
 res$overall %>%    select(-s.value) %>% 
@@ -430,7 +434,7 @@ res$by_subj %>%   select(-s.value) %>%
 
 By treatment and overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>%     select(-s.value, -any_of(c("term", "df"))) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
 res$overall %>%    select(-s.value) %>% 
@@ -489,7 +493,7 @@ res$by_subj %>%   select(-s.value) %>%
 
 By treatment and overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>%     select(-s.value, -any_of(c("term", "df"))) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
 res$overall %>%    select(-s.value) %>% 
@@ -548,7 +552,7 @@ res$by_subj %>%   select(-s.value) %>%
 
 By treatment and overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>%     select(-s.value, -any_of(c("term", "df"))) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
 res$overall %>%    select(-s.value) %>% 
@@ -608,7 +612,7 @@ res$by_subj %>%   select(-s.value) %>%
 
 By treatment and overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>%     select(-s.value, -any_of(c("term", "df"))) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
 res$overall %>%    select(-s.value) %>% 
@@ -669,7 +673,7 @@ res$by_subj %>%   select(-s.value) %>%
 By treatment and overall
 ```{r}
 res$by_trt %>%
-   select(-s.value, -term) %>% 
+   select(-s.value, -any_of(c("term", "df"))) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
 res$overall %>%    
@@ -730,7 +734,7 @@ res$by_subj %>%   select(-s.value) %>%
 
 By treatment group and overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>%     select(-s.value, -any_of(c("term", "df"))) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
 res$overall %>%    select(-s.value) %>% 
@@ -788,7 +792,7 @@ res$by_subj %>%   select(-s.value) %>%
 
 By treatment and overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>%     select(-s.value, -any_of(c("term", "df"))) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
 res$overall %>%    select(-s.value) %>% 
@@ -844,7 +848,7 @@ res$by_subj %>%   select(-s.value) %>%
 
 By treatment and overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>%     select(-s.value, -any_of(c("term", "df"))) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
 res$overall %>%    select(-s.value) %>% 
@@ -901,7 +905,7 @@ res$by_subj %>%   select(-s.value) %>%
 By treatment and overall
 ```{r}
 
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>%     select(-s.value, -any_of(c("term", "df"))) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
 
@@ -909,7 +913,7 @@ res$overall %>%    select(-s.value) %>%
   knitr::kable(col.names = c("Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 ```
 
-
+Note that an error was discovered in the original analysis code and in the SAP where the insomnia score was only calculated across 4 of the 7 items. These analyses are now based on the correct total score on all 7 items spanning scores of 0-28. The error was discovered and rectified on the 1st of October 2026. The change was done after the unblinding. However, no other significant changes than adding the three items to the total score was made. This is documented in the git change log.  
 
 
 
@@ -962,7 +966,7 @@ res$by_subj %>%   select(-s.value) %>%
 By treatment and overall
 ```{r}
 
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>%     select(-s.value, -any_of(c("term", "df"))) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
 res$overall %>%    select(-s.value) %>% 
@@ -1020,7 +1024,7 @@ res$by_subj %>%   select(-s.value) %>%
 
 By treatment and overall
 ```{r}
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>%     select(-s.value, -any_of(c("term", "df"))) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
 res$overall %>%    select(-s.value) %>% 
@@ -1181,7 +1185,7 @@ res$by_subj %>%   select(-s.value) %>%
 By treatment and overall
 ```{r}
 
-res$by_trt %>%     select(-s.value, -term) %>% 
+res$by_trt %>%     select(-s.value, -any_of(c("term", "df"))) %>% 
   knitr::kable(col.names = c("Treatment", "Estimate", "Std. Err.", "p-value", "Lower CL", "Upper CL"), digits = 3)
 
 res$overall %>%    select(-s.value) %>% 
@@ -1249,9 +1253,9 @@ avg_comparisons(fit8, variables = "rantrt", newdata = datagrid(rantrt = c("Sham"
 Finally see if there is a difference:
 ```{r}
 cmp <- avg_comparisons(fit8, variables = "rantrt", newdata = datagrid(rantrt = c("Sham", "Burst stimulation"), prevtrt = c("Sham", "Burst stimulation"), grid_type = "counterfactual"), by = c("prevtrt"))
-hypotheses(cmp, hypothesis = "pairwise") %>% 
+hypotheses(cmp, hypothesis = ~ revpairwise) %>% 
   tidy() %>% 
-  select(-term,  -starts_with("predicted"), -statistic) %>% 
+  select(-any_of("term"),  -starts_with("predicted"), -statistic) %>% 
   kable(digits = 3)
 
 ```
