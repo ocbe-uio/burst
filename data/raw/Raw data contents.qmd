@@ -1,0 +1,43 @@
+---
+title: "Raw data contents"
+format: html
+editor: visual
+---
+
+| Abbreviaiton | Description | Comment | Included in dataset |
+|----|----|----|----|
+| PAT | Patient information |  | adsl |
+| EOS | End of Study |  | adsl |
+| MD | Medication | No observations | \- |
+| PCS | Pain Catastrophizing Scale (PROM) |  | addm |
+| IS | Insomnia Severity Index (PROM) |  | adprom |
+| ISA | Settings before study end |  |  |
+| VS | Vital Signs |  | addm |
+| TK | Telephone contact |  |  |
+| EQ5D | EQ-5D |  | adprom |
+| CM | Concomitant medication |  | addm |
+| RAN | Randomization |  | adsl |
+| KO | Treatment Complications |  |  |
+| AK | Activity measurement | Only previous patients | \- |
+| HSCL | Hopkins Symptom Checklist Likert (PROM) |  | adprom |
+| BH | Previous treatment |  | addm |
+| PGIC | Patient Global Impression of Change and patient blinding questionnaire |  | adprom |
+| SC2 | Before testing for blinded personnel | No observations | \- |
+| SP | Turn off and on Burst simulation Blinded |  | adsl |
+| CO | Comments |  |  |
+| BI | Background information |  | addm |
+| IM | Implantment of electrode |  |  |
+| FP | Emotional unpleasantness (PROM) |  | adprom |
+| AC | Actigraf | Only previous patients | \- |
+| OP | Follow-up patients (analgetics) |  |  |
+| PSFS | Three individually chosen functions that are inhibited by the pain |  | adprom |
+| KN | Threshold value | Only previous patients |  |
+| SC | Before testing, blinded personell |  |  |
+| SV | Pain duration at baseline |  | addm |
+| IE | Inclusion and exclusion criteria |  |  |
+| NRS | Numeric rating scale | Only previous patients |  |
+| NRS_R | Pain NRS - Back/Neck |  | adprom |
+| NRS_BEN | Pain NRS - Leg or Arm |  | adprom |
+| RN | Back/Neck pain at screening (Yes/No) |  | addm |
+
+: Raw data contents
