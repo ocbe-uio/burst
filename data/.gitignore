@@ -4,5 +4,6 @@
 !.gitignore
 !Raw dataset contents.qmd
 !readme.txt
+!_20230919_063242_Items.csv
 
 #This folder should contain the raw data as downloaded from Viedoc. This will not be uploaded to GitHub. 
